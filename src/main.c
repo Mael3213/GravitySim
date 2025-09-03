@@ -2,13 +2,19 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <windows.h>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
 
-/* === Planètes === */
+/* === Planètes === */ //{x,y,z,vx,vy,vz,masse,r,g,b}
+double planete[2][10] = {{2.1f,0,0,1,0,0,1,0,0,1},
+                       {0,0,0,0,0,0,1,0.5,1,0}};
 
+static double lastTime = 0.0;
+double t;
+double dt;
 
 /* === FPS === */
 static int frameCount = 0;
@@ -37,6 +43,19 @@ static int timerIntervalMs = 16;
 static int lastTimeMs = 0;
 
 static inline double deg2rad(double d) { return d * M_PI / 180.0; }
+
+double getTimeSeconds() {
+    static LARGE_INTEGER frequency;
+    static BOOL initialized = FALSE;
+    if (!initialized) {
+        QueryPerformanceFrequency(&frequency);
+        initialized = TRUE;
+    }
+
+    LARGE_INTEGER counter;
+    QueryPerformanceCounter(&counter);
+    return (double)counter.QuadPart / (double)frequency.QuadPart;
+}
 
 void drawText(const char *text, float x, float y) {
     glMatrixMode(GL_PROJECTION);
@@ -86,12 +105,13 @@ void display(void) {
 
     updateViewMatrix();
 
-    glColor3f(0.0f, 0.5f, 1.0f); // couleur
+    for(int n = 0; n < sizeof(planete)/sizeof(planete[0]); n++){
+    glColor3f(planete[n][7], planete[n][8], planete[n][9]); // couleur
     glPushMatrix();
-    glTranslatef(2.0f, 1.0f, -5.0f); // position dans la scène
-    glutSolidSphere(1.0, 32, 32); // sphère remplie, rayon 1, 32 slices/stacks
+    glTranslatef(planete[n][0], planete[n][1], planete[n][2]); // position dans la scène
+    glutSolidSphere(sqrt(planete[n][6]), 32, 32); // sphère remplie, rayon 1, 32 slices/stacks
     glPopMatrix();
-
+    }
 
 
     // === compteur FPS ===
@@ -210,8 +230,15 @@ void timerUpdate(int value) {
     glutTimerFunc(timerIntervalMs, timerUpdate, 0);
 }
 
-void sim(){
-    return;
+void sim() {
+    dt = getTimeSeconds() - t;
+    t = getTimeSeconds();
+    for (int n = 0; n < sizeof(planete)/sizeof(planete[0]); n++) {
+        planete[n][0] += planete[n][3] * dt;
+        planete[n][1] += planete[n][4] * dt;
+        planete[n][2] += planete[n][5] * dt;
+    }
+    
 }
 
 /* ===== Init ===== */
@@ -232,6 +259,7 @@ void reshape(int w, int h) {
 
 /* ===== main ===== */
 int main(int argc, char** argv) {
+    t = getTimeSeconds();
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(winWidth, winHeight);
@@ -259,3 +287,4 @@ int main(int argc, char** argv) {
     glutMainLoop();
     return 0;
 }
+
