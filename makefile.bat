@@ -1,0 +1,1 @@
+gcc src\main.c -Iinclude -Llib -lfreeglut -lopengl32 -lglu32 -o bin\main.exe
