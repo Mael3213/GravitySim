@@ -9,12 +9,22 @@
 #endif
 
 /* === Planètes === */ //{x,y,z,vx,vy,vz,masse,r,g,b}
-double planete[2][10] = {{2.1f,0,0,1,0,0,1,0,0,1},
-                       {0,0,0,0,0,0,1,0.5,1,0}};
+double planete[3][10] = {{0,0,0,0,0,0,100,0,0,1},{20,0,0,0,0,4,10,0.5,1,0},{-20,0,0,0,0,-4,10,0,1,0}};
 
+
+/* === timer === */
 static double lastTime = 0.0;
 double t;
 double dt;
+
+/* vistess de simulation */
+float v_sim = 1;
+long simCount = 0;
+long sps = 0;
+int lastSimTime = 0;
+
+/* === gravité ===*/
+float G = 3;
 
 /* === FPS === */
 static int frameCount = 0;
@@ -22,9 +32,9 @@ static int fps = 0;
 static int lastFpsTime = 0;
 
 /* ========= Caméra ========= */
-static double camX = 0.0, camY = 1.6, camZ = 5.0;
+static double camX = 0.0, camY = 20, camZ = 0;
 static double yaw = -90.0, pitch = 0.0;
-static double speed = 5.0;              // unités/sec
+static double speed = 10.0;              // unités/sec
 static double mouseSensitivity = 0.15;  // sensibilité souris
 
 /* États des touches */
@@ -109,7 +119,7 @@ void display(void) {
     glColor3f(planete[n][7], planete[n][8], planete[n][9]); // couleur
     glPushMatrix();
     glTranslatef(planete[n][0], planete[n][1], planete[n][2]); // position dans la scène
-    glutSolidSphere(sqrt(planete[n][6]), 32, 32); // sphère remplie, rayon 1, 32 slices/stacks
+    glutSolidSphere(sqrtf(planete[n][6]), 32, 32); // sphère remplie, rayon 1, 32 slices/stacks
     glPopMatrix();
     }
 
@@ -128,6 +138,9 @@ void display(void) {
     snprintf(buffer, sizeof(buffer), "FPS: %d", fps);
     glColor3f(1, 1, 1); // blanc
     drawText(buffer, 10, winHeight - 20);
+    snprintf(buffer, sizeof(buffer), "Sim/s: %d", sps);
+    glColor3f(1, 1, 1); // blanc
+    drawText(buffer, 100, winHeight - 20);
 
     glutSwapBuffers();
 }
@@ -140,6 +153,12 @@ void keyDown(unsigned char key, int x, int y) {
     if (key == 'a' || key == 'q') moveLeft = true;
     if (key == 'd') moveRight = true;
     if (key == 32) moveUp = true;       // espace
+     switch (key) {
+    case '&': v_sim = 0.5; break; // touche 1 (AZERTY)
+    case 233: v_sim = 1.0; break; // touche 2
+    case '"': v_sim = 2.0; break; // touche 3
+    case '\'': v_sim = 4.0; break; // touche 4
+     }
 }
 
 void keyUp(unsigned char key, int x, int y) {
@@ -231,13 +250,51 @@ void timerUpdate(int value) {
 }
 
 void sim() {
+    
     dt = getTimeSeconds() - t;
     t = getTimeSeconds();
-    for (int n = 0; n < sizeof(planete)/sizeof(planete[0]); n++) {
-        planete[n][0] += planete[n][3] * dt;
-        planete[n][1] += planete[n][4] * dt;
-        planete[n][2] += planete[n][5] * dt;
+    simCount++;
+    int now = glutGet(GLUT_ELAPSED_TIME);
+    if (now - lastSimTime > 1000) {
+        sps = simCount;
+        lastSimTime = now;
+        simCount = 0;
     }
+    int N = sizeof(planete) / sizeof(planete[0]);
+
+    for (int i = 0; i < N; i++) {
+        for (int j = i + 1; j < N; j++) {
+            float Fx = 0, Fy = 0, Fz = 0;
+
+            float dx = planete[j][0] - planete[i][0];
+            float dy = planete[j][1] - planete[i][1];
+            float dz = planete[j][2] - planete[i][2];
+            float dist2 = dx*dx + dy*dy + dz*dz;
+
+            float dist = sqrtf(dist2);
+
+
+            float F = G * planete[j][6]*planete[i][6]/dist2;
+
+            Fx += F * dx / dist;
+            Fy += F * dy / dist;
+            Fz += F * dz / dist;
+
+            planete[i][3] += Fx / planete[i][6] * dt * v_sim;
+            planete[i][4] += Fy / planete[i][6] * dt * v_sim;
+            planete[i][5] += Fz / planete[i][6] * dt * v_sim;
+
+            planete[j][3] -= Fx / planete[j][6] * dt * v_sim;
+            planete[j][4] -= Fy / planete[j][6] * dt * v_sim;
+            planete[j][5] -= Fz / planete[j][6] * dt * v_sim;
+
+    }
+}for (int n = 0; n < sizeof(planete)/sizeof(planete[0]); n++) {
+        planete[n][0] += planete[n][3] * dt * v_sim;
+        planete[n][1] += planete[n][4] * dt * v_sim;
+        planete[n][2] += planete[n][5] * dt * v_sim;
+    }
+
     
 }
 
@@ -287,4 +344,3 @@ int main(int argc, char** argv) {
     glutMainLoop();
     return 0;
 }
-
