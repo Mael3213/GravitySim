@@ -9,7 +9,7 @@
 #endif
 
 /* === Planètes === */ //{x,y,z,vx,vy,vz,masse,r,g,b}
-double planete[3][10] = {{0,0,0,0,0,0,100,0,0,1},{20,0,0,0,0,4,10,0.5,1,0},{-20,0,0,0,0,-4,10,0,1,0}};
+double planete[2][10] = {{5,0,0,0,0,1.25,10,0,0,1},{-5,0,0,0,0,-1.25,10,0.5,1,0}};
 
 
 /* === timer === */
@@ -67,6 +67,7 @@ double getTimeSeconds() {
     return (double)counter.QuadPart / (double)frequency.QuadPart;
 }
 
+
 void drawText(const char *text, float x, float y) {
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
@@ -119,7 +120,7 @@ void display(void) {
     glColor3f(planete[n][7], planete[n][8], planete[n][9]); // couleur
     glPushMatrix();
     glTranslatef(planete[n][0], planete[n][1], planete[n][2]); // position dans la scène
-    glutSolidSphere(sqrtf(planete[n][6]), 32, 32); // sphère remplie, rayon 1, 32 slices/stacks
+    glutSolidSphere(sqrtf(planete[n][6]), 32, 32); // sphère remplie,
     glPopMatrix();
     }
 
@@ -154,10 +155,17 @@ void keyDown(unsigned char key, int x, int y) {
     if (key == 'd') moveRight = true;
     if (key == 32) moveUp = true;       // espace
      switch (key) {
-    case '&': v_sim = 0.5; break; // touche 1 (AZERTY)
+    case 38: v_sim = 0.5; break; // touche 1 (AZERTY)
     case 233: v_sim = 1.0; break; // touche 2
-    case '"': v_sim = 2.0; break; // touche 3
-    case '\'': v_sim = 4.0; break; // touche 4
+    case 34: v_sim = 2.0; break; // touche 3
+    case 39: v_sim = 4.0; break; // touche 4
+    case 40: v_sim = 8; break; // touche 5
+    case 45: v_sim = 16; break; // touche 6
+    case 232: v_sim = 32; break; // touche 7
+    case 95: v_sim = 64; break; // touche 8
+    case 231: v_sim = 128; break; // touche 9
+    case 224: v_sim = 256; break; // touche 0
+    
      }
 }
 
@@ -249,6 +257,23 @@ void timerUpdate(int value) {
     glutTimerFunc(timerIntervalMs, timerUpdate, 0);
 }
 
+void fusion_planete(int p0,int p1){
+    return;
+    double nouvelle_planete[10];
+    if (planete[p0][6]>planete[p1][6]){
+        memcpy(nouvelle_planete,planete[p0],sizeof(planete[p0]));
+    }else{
+        memcpy(nouvelle_planete,planete[p1],sizeof(planete[p1]));
+    }
+    int N = sizeof(planete) / sizeof(planete[0]);
+    for (int i = 0; i < N; i++) {
+        if (i != p0 && i != p1) {
+            memcpy(planete[i - (i > p1) - (i > p0)], planete[i], sizeof(planete[i]));
+        }
+    }
+    memcpy(planete[N - 2], nouvelle_planete, sizeof(nouvelle_planete));
+}
+
 void sim() {
     
     dt = getTimeSeconds() - t;
@@ -272,8 +297,6 @@ void sim() {
             float dist2 = dx*dx + dy*dy + dz*dz;
 
             float dist = sqrtf(dist2);
-
-
             float F = G * planete[j][6]*planete[i][6]/dist2;
 
             Fx += F * dx / dist;
@@ -288,8 +311,12 @@ void sim() {
             planete[j][4] -= Fy / planete[j][6] * dt * v_sim;
             planete[j][5] -= Fz / planete[j][6] * dt * v_sim;
 
-    }
-}for (int n = 0; n < sizeof(planete)/sizeof(planete[0]); n++) {
+            if (dist < sqrtf(planete[i][6])+sqrtf(planete[j][6])){
+                fusion_planete(i,j);
+                i = N;
+            }
+        }
+    }for (int n = 0; n < sizeof(planete)/sizeof(planete[0]); n++) {
         planete[n][0] += planete[n][3] * dt * v_sim;
         planete[n][1] += planete[n][4] * dt * v_sim;
         planete[n][2] += planete[n][5] * dt * v_sim;
