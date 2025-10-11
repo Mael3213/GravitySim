@@ -4,13 +4,17 @@
 #include <stdio.h>
 #include <windows.h>
 
+
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
 
-/* === Planètes === */ //{x,y,z,vx,vy,vz,masse,r,g,b}
-double planete[2][10] = {{5,0,0,0,0,1.25,10,0,0,1},{-5,0,0,0,0,-1.25,10,0.5,1,0}};
 
+
+/* === Planètes === */ //{x,y,z,vx,vy,vz,masse,r,g,b}
+#define MAX_PLANETE 1000
+double planete[MAX_PLANETE][10] = {{5,0,0,0,0,0,11,0,0,1},{-5,0,0,0,0,-1.25,10,0.5,1,0},{20,0,0,0,0,0,5,0,1,1}};
+long nb_planete = 3;
 
 /* === timer === */
 static double lastTime = 0.0;
@@ -19,6 +23,7 @@ double dt;
 
 /* vistess de simulation */
 float v_sim = 1;
+float ans_v_sim;
 long simCount = 0;
 long sps = 0;
 int lastSimTime = 0;
@@ -116,12 +121,12 @@ void display(void) {
 
     updateViewMatrix();
 
-    for(int n = 0; n < sizeof(planete)/sizeof(planete[0]); n++){
-    glColor3f(planete[n][7], planete[n][8], planete[n][9]); // couleur
-    glPushMatrix();
-    glTranslatef(planete[n][0], planete[n][1], planete[n][2]); // position dans la scène
-    glutSolidSphere(sqrtf(planete[n][6]), 32, 32); // sphère remplie,
-    glPopMatrix();
+    for(int n = 0; n < nb_planete; n++){
+        glColor3f(planete[n][7], planete[n][8], planete[n][9]); // couleur
+        glPushMatrix();
+        glTranslatef(planete[n][0], planete[n][1], planete[n][2]); // position dans la scène
+        glutSolidSphere(sqrtf(planete[n][6]), 32, 32); // sphère remplie,
+        glPopMatrix();
     }
 
 
@@ -165,8 +170,15 @@ void keyDown(unsigned char key, int x, int y) {
     case 95: v_sim = 64; break; // touche 8
     case 231: v_sim = 128; break; // touche 9
     case 224: v_sim = 256; break; // touche 0
-    
      }
+    if (key == 'p') {// mettre en pause la simulation 
+        if (v_sim != 0) {
+            ans_v_sim = v_sim;
+            v_sim = 0;
+        }else{ 
+            v_sim = ans_v_sim; 
+        } 
+    }
 }
 
 void keyUp(unsigned char key, int x, int y) {
@@ -258,22 +270,40 @@ void timerUpdate(int value) {
 }
 
 void fusion_planete(int p0,int p1){
-    return;
+    int N = nb_planete;
     double nouvelle_planete[10];
-    if (planete[p0][6]>planete[p1][6]){
-        memcpy(nouvelle_planete,planete[p0],sizeof(planete[p0]));
-    }else{
-        memcpy(nouvelle_planete,planete[p1],sizeof(planete[p1]));
+    double ancienne_planete[N][10];
+    // Copie de toutes les planètes actuelles
+    for (int n = 0; n < N; n++) {
+        memcpy(ancienne_planete[n], planete[n], sizeof(planete[n]));
     }
-    int N = sizeof(planete) / sizeof(planete[0]);
-    for (int i = 0; i < N; i++) {
-        if (i != p0 && i != p1) {
-            memcpy(planete[i - (i > p1) - (i > p0)], planete[i], sizeof(planete[i]));
-        }
-    }
-    memcpy(planete[N - 2], nouvelle_planete, sizeof(nouvelle_planete));
-}
+    
+        double masse_p0 = planete[p0][6];
+        double masse_p1 = planete[p1][6];
+        double masse_totale = masse_p0+masse_p1;
+        nouvelle_planete[0]=(planete[p0][0]*masse_p0+planete[p1][0]*masse_p1)/masse_totale;
+        nouvelle_planete[1]=(planete[p0][1]*masse_p0+planete[p1][1]*masse_p1)/masse_totale;
+        nouvelle_planete[2]=(planete[p0][2]*masse_p0+planete[p1][2]*masse_p1)/masse_totale;
+        nouvelle_planete[3]=(planete[p0][3]*masse_p0+planete[p1][3]*masse_p1)/masse_totale;
+        nouvelle_planete[4]=(planete[p0][4]*masse_p0+planete[p1][4]*masse_p1)/masse_totale;
+        nouvelle_planete[5]=(planete[p0][5]*masse_p0+planete[p1][5]*masse_p1)/masse_totale;
+        nouvelle_planete[6]=masse_totale;
+        nouvelle_planete[7]=(planete[p0][7]*masse_p0+planete[p1][7]*masse_p1)/masse_totale;
+        nouvelle_planete[8]=(planete[p0][8]*masse_p0+planete[p1][8]*masse_p1)/masse_totale;
+        nouvelle_planete[9]=(planete[p0][9]*masse_p0+planete[p1][9]*masse_p1)/masse_totale;
 
+    // Réécriture du tableau des planètes
+    int k = 0;
+    for (int n = 0; n < N; n++) {
+        if (n == p0 || n == p1) continue; // on saute les planètes fusionnées
+        memcpy(planete[k], ancienne_planete[n], sizeof(planete[n]));
+        k++;
+    }
+
+    // On ajoute la nouvelle planète fusionnée à la fin
+    memcpy(planete[k], nouvelle_planete, sizeof(nouvelle_planete));
+    nb_planete--;
+}
 void sim() {
     
     dt = getTimeSeconds() - t;
@@ -285,7 +315,7 @@ void sim() {
         lastSimTime = now;
         simCount = 0;
     }
-    int N = sizeof(planete) / sizeof(planete[0]);
+    int N = nb_planete;
 
     for (int i = 0; i < N; i++) {
         for (int j = i + 1; j < N; j++) {
@@ -316,7 +346,7 @@ void sim() {
                 i = N;
             }
         }
-    }for (int n = 0; n < sizeof(planete)/sizeof(planete[0]); n++) {
+    }for (int n = 0; n < nb_planete; n++) {
         planete[n][0] += planete[n][3] * dt * v_sim;
         planete[n][1] += planete[n][4] * dt * v_sim;
         planete[n][2] += planete[n][5] * dt * v_sim;
@@ -325,11 +355,7 @@ void sim() {
     
 }
 
-/* ===== Init ===== */
-void initGL() {
-    glEnable(GL_DEPTH_TEST);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // fond noir
-}
+
 void reshape(int w, int h) {
     if (h == 0) h = 1;
     winWidth = w; winHeight = h;
@@ -349,7 +375,7 @@ int main(int argc, char** argv) {
     glutInitWindowSize(winWidth, winHeight);
     glutCreateWindow("FPS camera");
 
-    initGL();
+    glEnable(GL_DEPTH_TEST); glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // fond noir
 
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
