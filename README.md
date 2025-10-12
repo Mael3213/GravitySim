@@ -1,5 +1,5 @@
 # GravitySim
-GravitySim est un simulateur de planètes et de gravité codée en c par moi même(donc il est un peu brouillon)
+GravitySim est un simulateur de planètes et de gravité codée en c(il est loin d'etre parfait donc je suis ouvert à vos conseils)
 
 ## Controles
 - 0-9 : vitesse de simulation
