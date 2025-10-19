@@ -13,7 +13,7 @@
 
 
 /* === Planètes === */ //{x,y,z,vx,vy,vz,masse,r,g,b}
-#define MAX_PLANETE 1000
+#define MAX_PLANETE 100000
 double planete[MAX_PLANETE][10] ;
 long nb_planete;
 
@@ -32,7 +32,7 @@ long sps = 0;
 int lastSimTime = 0;
 
 /* === gravité ===*/
-float G = 2;
+float G = 4;
 
 /* === FPS === */
 static int frameCount = 0;
@@ -124,6 +124,28 @@ void display(void) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     updateViewMatrix();
+    /*  // affichage d'un repère
+    glColor3f(1,0,0);
+    // Dessine une ligne rouge
+    glBegin(GL_LINES);
+        glVertex3f(-10, 0, 0); 
+        glVertex3f(10, 0, 0);
+    glEnd();
+
+    glColor3f(0,1,0);
+    // Dessine une ligne verte
+    glBegin(GL_LINES);
+        glVertex3f(0,-10, 0); 
+        glVertex3f(0, 10, 0);
+    glEnd();
+
+    glColor3f(0,0,1);
+    // Dessine une ligne blue
+    glBegin(GL_LINES);
+        glVertex3f( 0, 0, -10); 
+        glVertex3f( 0, 0, 10);
+    glEnd();
+    */
 
     for(int n = 0; n < nb_planete; n++){
         glColor3f(planete[n][7], planete[n][8], planete[n][9]); // couleur
@@ -185,7 +207,7 @@ void keyDown(unsigned char key, int x, int y) {
     case 95: v_sim = 64; break; // touche 8
     case 231: v_sim = 128; break; // touche 9
     case 224: v_sim = 256; break; // touche 0
-     }
+    }
     if (key == 'p') {// mettre en pause la simulation 
         if (v_sim != 0) {
             ans_v_sim = v_sim;
@@ -212,6 +234,9 @@ void specialDown(int key, int x, int y) {
     if (key == GLUT_KEY_LEFT) moveLeft = true;
     if (key == GLUT_KEY_RIGHT) moveRight = true;
     if (key == GLUT_KEY_SHIFT_L || key == GLUT_KEY_SHIFT_R) moveDown = true;
+    if (key == GLUT_KEY_F11){
+        glutFullScreenToggle();
+    }
 }
 
 void specialUp(int key, int x, int y) {
@@ -373,9 +398,9 @@ void sim() {
 
 void rand_planete(){
     srand(time(NULL));
-    nb_planete = rand() % 1001;  // entre 0 et 20 planètes
+    nb_planete = rand() % 501;  // entre 0 et 500 planètes
 
-    for (int a = 0; a < nb_planete; a++) {
+    for (long a = 0; a < nb_planete; a++) {
         // position (x,y,z)
         for (int b = 0; b < 3; b++) {
             planete[a][b] = ((double)rand() / RAND_MAX) * 2000.0 - 1000.0;
@@ -414,7 +439,7 @@ int main(int argc, char** argv) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(winWidth, winHeight);
-    glutCreateWindow("FPS camera");
+    glutCreateWindow("GravitySim");
 
     glEnable(GL_DEPTH_TEST); glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // fond noir
 
