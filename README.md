@@ -6,6 +6,7 @@ GravitySim est un simulateur de planètes et de gravité codée en c(il est loin
 - 0-9 : vitesse de simulation
 - ZQSD ou WASD, Espace et Maj : déplacements
 - p : Play/pause
+- F11 : plein écran
 
 ## Fonctionnalité
 - simulation réaliste des la gravité
