@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <windows.h>
+#include <time.h>
 
 
 #ifndef M_PI
@@ -13,8 +14,10 @@
 
 /* === Planètes === */ //{x,y,z,vx,vy,vz,masse,r,g,b}
 #define MAX_PLANETE 1000
-double planete[MAX_PLANETE][10] = {{5,0,0,0,0,0,11,0,0,1},{-5,0,0,0,0,-1.25,10,0.5,1,0},{20,0,0,0,0,0,5,0,1,1}};
-long nb_planete = 3;
+double planete[MAX_PLANETE][10] ;
+long nb_planete;
+
+//= {{5,0,0,0,0,0,11,0,0,1},{-5,0,0,0,0,-1.25,10,0.5,1,0},{20,0,0,0,0,0,5,0,1,1}}
 
 /* === timer === */
 static double lastTime = 0.0;
@@ -29,7 +32,7 @@ long sps = 0;
 int lastSimTime = 0;
 
 /* === gravité ===*/
-float G = 3;
+float G = 2;
 
 /* === FPS === */
 static int frameCount = 0;
@@ -39,7 +42,7 @@ static int lastFpsTime = 0;
 /* ========= Caméra ========= */
 static double camX = 0.0, camY = 20, camZ = 0;
 static double yaw = -90.0, pitch = 0.0;
-static double speed = 10.0;              // unités/sec
+static double speed = 100.0;              // unités/sec
 static double mouseSensitivity = 0.15;  // sensibilité souris
 
 /* États des touches */
@@ -52,6 +55,7 @@ static bool moveDown = false;   // shift
 
 /* Fenêtre */
 static int winWidth = 800, winHeight = 600;
+double dist_affichage = 10000.0;
 
 /* Timer */
 static int timerIntervalMs = 16;
@@ -141,12 +145,23 @@ void display(void) {
 
     // afficher FPS en haut à gauche
     char buffer[64];
-    snprintf(buffer, sizeof(buffer), "FPS: %d", fps);
+    snprintf(buffer, sizeof(buffer), "FPS: %ld", fps);
     glColor3f(1, 1, 1); // blanc
     drawText(buffer, 10, winHeight - 20);
-    snprintf(buffer, sizeof(buffer), "Sim/s: %d", sps);
+
+    snprintf(buffer, sizeof(buffer), "Sim/s: %ld", sps);
     glColor3f(1, 1, 1); // blanc
     drawText(buffer, 100, winHeight - 20);
+
+    snprintf(buffer, sizeof(buffer), "Planetes: %ld", nb_planete);
+    glColor3f(1, 1, 1); // blanc
+    drawText(buffer, 210, winHeight - 20);
+
+    snprintf(buffer, sizeof(buffer), "Vitesse: %.1f", v_sim);
+    glColor3f(1, 1, 1); // blanc
+    drawText(buffer, 320, winHeight - 20);
+
+
 
     glutSwapBuffers();
 }
@@ -270,11 +285,11 @@ void timerUpdate(int value) {
 }
 
 void fusion_planete(int p0,int p1){
-    int N = nb_planete;
+    long N = nb_planete;
     double nouvelle_planete[10];
     double ancienne_planete[N][10];
     // Copie de toutes les planètes actuelles
-    for (int n = 0; n < N; n++) {
+    for (long n = 0; n < N; n++) {
         memcpy(ancienne_planete[n], planete[n], sizeof(planete[n]));
     }
     
@@ -293,8 +308,8 @@ void fusion_planete(int p0,int p1){
         nouvelle_planete[9]=(planete[p0][9]*masse_p0+planete[p1][9]*masse_p1)/masse_totale;
 
     // Réécriture du tableau des planètes
-    int k = 0;
-    for (int n = 0; n < N; n++) {
+    long k = 0;
+    for (long n = 0; n < N; n++) {
         if (n == p0 || n == p1) continue; // on saute les planètes fusionnées
         memcpy(planete[k], ancienne_planete[n], sizeof(planete[n]));
         k++;
@@ -305,9 +320,9 @@ void fusion_planete(int p0,int p1){
     nb_planete--;
 }
 void sim() {
-    
-    dt = getTimeSeconds() - t;
-    t = getTimeSeconds();
+    double time = getTimeSeconds();
+    dt = time - t;
+    t = time;
     simCount++;
     int now = glutGet(GLUT_ELAPSED_TIME);
     if (now - lastSimTime > 1000) {
@@ -344,6 +359,7 @@ void sim() {
             if (dist < sqrtf(planete[i][6])+sqrtf(planete[j][6])){
                 fusion_planete(i,j);
                 i = N;
+                j = N;
             }
         }
     }for (int n = 0; n < nb_planete; n++) {
@@ -355,15 +371,40 @@ void sim() {
     
 }
 
+void rand_planete(){
+    srand(time(NULL));
+    nb_planete = rand() % 1001;  // entre 0 et 20 planètes
+
+    for (int a = 0; a < nb_planete; a++) {
+        // position (x,y,z)
+        for (int b = 0; b < 3; b++) {
+            planete[a][b] = ((double)rand() / RAND_MAX) * 2000.0 - 1000.0;
+        }
+
+        // vitesse (vx,vy,vz)
+        for (int b = 3; b < 6; b++) {
+            planete[a][b] = ((double)rand() / RAND_MAX) * 5.0 - 2.5;
+        }
+
+        // masse
+        planete[a][6] = 5.0 + ((double)rand() / RAND_MAX) * 15.0;
+
+        // couleur RGB
+        for (int b = 7; b < 10; b++) {
+            planete[a][b] = ((double)rand() / RAND_MAX);
+        }
+    }
+}
 
 void reshape(int w, int h) {
+    rand_planete();
     if (h == 0) h = 1;
     winWidth = w; winHeight = h;
     glViewport(0, 0, w, h);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(70.0, (double)w/(double)h, 0.1, 200.0);
+    gluPerspective(70.0, (double)w/(double)h, 0.1, dist_affichage);
     glMatrixMode(GL_MODELVIEW);
 }
 
