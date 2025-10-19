@@ -9,6 +9,7 @@ GravitySim est un simulateur de planètes et de gravité codée en c(il est loin
 ## Fonctionnalité
 - simulation réaliste des la gravité
 - fusion des planètes quand elles se touchent
+- création aléatoire des planètes au debut
 
 ## Bibliothèques
 - Glut.h
