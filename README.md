@@ -1,7 +1,8 @@
 # GravitySim
 GravitySim est un simulateur de planètes et de gravité codée en c(il est loin d'etre parfait donc je suis ouvert à vos conseils)
 
-<img width="994" height="767" alt="Capture d'écran 2025-10-19 072908" src="https://github.com/user-attachments/assets/84c56014-3d2b-40de-9f0e-32623f957781" />
+<img width="1919" height="1079" alt="Capture d'écran 2025-10-21 061413" src="https://github.com/user-attachments/assets/548484d8-c412-46b9-b3d4-d37acf37abfa" />
+
 ## Controles
 - 0-9 : vitesse de simulation
 - ZQSD ou WASD, Espace et Maj : déplacements
