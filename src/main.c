@@ -349,16 +349,16 @@ void sim() {
     dt = time - t;
     t = time;
     simCount++;
-    int now = glutGet(GLUT_ELAPSED_TIME);
+    double now = glutGet(GLUT_ELAPSED_TIME);
     if (now - lastSimTime > 1000) {
         sps = simCount;
         lastSimTime = now;
         simCount = 0;
     }
-    int N = nb_planete;
-
-    for (int i = 0; i < N; i++) {
-        for (int j = i + 1; j < N; j++) {
+    if (v_sim!=0){
+    long N = nb_planete;
+    for (long i = 0; i < N; i++) {
+        for (long j = i + 1; j < N; j++) {
             float Fx = 0, Fy = 0, Fz = 0;
 
             float dx = planete[j][0] - planete[i][0];
@@ -387,13 +387,15 @@ void sim() {
                 j = N;
             }
         }
-    }for (int n = 0; n < nb_planete; n++) {
+    }for (long n = 0; n < nb_planete; n++) {
         planete[n][0] += planete[n][3] * dt * v_sim;
         planete[n][1] += planete[n][4] * dt * v_sim;
         planete[n][2] += planete[n][5] * dt * v_sim;
     }
 
-    
+}else{
+    Sleep(1);
+}
 }
 
 void rand_planete(){
@@ -422,7 +424,6 @@ void rand_planete(){
 }
 
 void reshape(int w, int h) {
-    rand_planete();
     if (h == 0) h = 1;
     winWidth = w; winHeight = h;
     glViewport(0, 0, w, h);
@@ -435,6 +436,9 @@ void reshape(int w, int h) {
 
 /* ===== main ===== */
 int main(int argc, char** argv) {
+    if (planete[0]!=0){
+        rand_planete();
+    }
     t = getTimeSeconds();
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
